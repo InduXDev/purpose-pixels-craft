@@ -11,6 +11,7 @@ interface Post {
   content: string;
   image_url?: string;
   created_at: string;
+  user_id: string;
   profiles?: {
     username?: string;
     full_name?: string;
@@ -26,23 +27,42 @@ const PostsFeed = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const { data, error } = await supabase
+        // First get posts
+        const { data: postsData, error: postsError } = await supabase
           .from('posts')
-          .select(`
-            *,
-            profiles!posts_user_id_fkey (
-              username,
-              full_name,
-              avatar_url
-            )
-          `)
+          .select('*')
           .order('created_at', { ascending: false });
 
-        if (error) {
-          throw error;
+        if (postsError) {
+          throw postsError;
         }
 
-        setPosts(data || []);
+        if (!postsData || postsData.length === 0) {
+          setPosts([]);
+          return;
+        }
+
+        // Get unique user IDs from posts
+        const userIds = [...new Set(postsData.map(post => post.user_id))];
+
+        // Fetch profiles for these users
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url')
+          .in('id', userIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          // Continue without profiles data
+        }
+
+        // Combine posts with profile data
+        const postsWithProfiles = postsData.map(post => ({
+          ...post,
+          profiles: profilesData?.find(profile => profile.id === post.user_id) || undefined
+        }));
+
+        setPosts(postsWithProfiles);
       } catch (error: any) {
         toast({
           title: "Error loading posts",
