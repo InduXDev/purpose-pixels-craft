@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { User, Edit2, Save, X } from 'lucide-react';
+import { User, Edit2, Save, X, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Profile {
   id: string;
@@ -23,14 +24,24 @@ interface Profile {
   posts_count: number | null;
 }
 
+interface Product {
+  id: string;
+  title: string;
+  price: number;
+  image_url: string | null;
+  created_at: string;
+}
+
 const Profile = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     username: '',
     full_name: '',
     bio: '',
+    avatar_url: '',
   });
   const { user } = useAuth();
   const { toast } = useToast();
@@ -59,6 +70,7 @@ const Profile = () => {
           username: data.username || '',
           full_name: data.full_name || '',
           bio: data.bio || '',
+          avatar_url: data.avatar_url || '',
         });
       } catch (error: any) {
         toast({
@@ -66,12 +78,32 @@ const Profile = () => {
           description: error.message,
           variant: "destructive",
         });
+      }
+    };
+
+    const fetchUserProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, title, price, image_url, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(6);
+
+        if (error) {
+          throw error;
+        }
+
+        setProducts(data || []);
+      } catch (error: any) {
+        console.error('Error loading products:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
+    fetchUserProducts();
   }, [user, toast]);
 
   const handleSave = async () => {
@@ -84,6 +116,7 @@ const Profile = () => {
           username: editForm.username || null,
           full_name: editForm.full_name || null,
           bio: editForm.bio || null,
+          avatar_url: editForm.avatar_url || null,
         })
         .eq('id', user.id);
 
@@ -96,6 +129,7 @@ const Profile = () => {
         username: editForm.username || null,
         full_name: editForm.full_name || null,
         bio: editForm.bio || null,
+        avatar_url: editForm.avatar_url || null,
       } : null);
 
       setEditing(false);
@@ -106,6 +140,32 @@ const Profile = () => {
     } catch (error: any) {
       toast({
         title: "Error updating profile",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId)
+        .eq('user_id', user?.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setProducts(products.filter(p => p.id !== productId));
+      toast({
+        title: "Product deleted",
+        description: "Your product has been successfully deleted.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error deleting product",
         description: error.message,
         variant: "destructive",
       });
@@ -156,7 +216,7 @@ const Profile = () => {
           )}
         </div>
         <div className="p-6">
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-4xl mx-auto space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
@@ -166,7 +226,7 @@ const Profile = () => {
                       <User className="w-8 h-8" />
                     </AvatarFallback>
                   </Avatar>
-                  <div>
+                  <div className="flex-1">
                     <h2 className="text-xl font-bold">
                       {editing ? (
                         <Input
@@ -195,6 +255,21 @@ const Profile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {editing && (
+                  <div>
+                    <Label htmlFor="avatar_url" className="text-sm font-medium text-gray-700">
+                      Profile Picture URL
+                    </Label>
+                    <Input
+                      id="avatar_url"
+                      value={editForm.avatar_url}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, avatar_url: e.target.value }))}
+                      placeholder="https://example.com/your-image.jpg"
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+
                 <div>
                   <Label htmlFor="bio" className="text-sm font-medium text-gray-700">
                     Bio
@@ -215,7 +290,7 @@ const Profile = () => {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <Card>
                     <CardContent className="pt-6">
                       <div className="text-center">
@@ -223,6 +298,16 @@ const Profile = () => {
                           {profile?.posts_count || 0}
                         </h3>
                         <p className="text-sm text-gray-600">Posts</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-center">
+                        <h3 className="text-2xl font-bold text-orange-600">
+                          {products.length}
+                        </h3>
+                        <p className="text-sm text-gray-600">Products</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -248,6 +333,7 @@ const Profile = () => {
                           username: profile?.username || '',
                           full_name: profile?.full_name || '',
                           bio: profile?.bio || '',
+                          avatar_url: profile?.avatar_url || '',
                         });
                       }}
                     >
@@ -262,6 +348,64 @@ const Profile = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* User's Products */}
+            {products.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Products</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {products.map((product) => (
+                      <Card key={product.id} className="relative">
+                        <div className="aspect-square overflow-hidden bg-gray-100 rounded-t-lg">
+                          <img
+                            src={product.image_url || '/placeholder.svg'}
+                            alt={product.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <CardContent className="p-4">
+                          <h3 className="font-medium line-clamp-1">{product.title}</h3>
+                          <p className="text-lg font-bold text-orange-600">
+                            ₹{product.price.toLocaleString('en-IN')}
+                          </p>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="absolute top-2 right-2 bg-white/80 hover:bg-white text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{product.title}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteProduct(product.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </SidebarInset>

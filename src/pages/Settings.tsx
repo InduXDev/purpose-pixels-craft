@@ -1,20 +1,121 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Globe, Palette } from 'lucide-react';
+import { Globe, Palette, Save } from 'lucide-react';
+
+interface UserSettings {
+  language: string;
+  theme: string;
+}
 
 const Settings = () => {
-  const [language, setLanguage] = useState('en');
-  const [theme, setTheme] = useState('light');
+  const [settings, setSettings] = useState<UserSettings>({
+    language: 'en',
+    theme: 'light'
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const { user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
+
+        if (data) {
+          setSettings({
+            language: data.language || 'en',
+            theme: data.theme || 'light'
+          });
+        }
+      } catch (error: any) {
+        toast({
+          title: "Error loading settings",
+          description: error.message,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSettings();
+  }, [user, toast]);
+
+  const handleSaveSettings = async () => {
+    if (!user) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user.id,
+          language: settings.language,
+          theme: settings.theme,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      // Apply theme to document
+      document.documentElement.setAttribute('data-theme', settings.theme);
+      
+      // Apply language to document
+      document.documentElement.setAttribute('lang', settings.language);
+
+      toast({
+        title: "Settings saved",
+        description: "Your preferences have been updated successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error saving settings",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Apply theme on component mount
+  useEffect(() => {
+    if (settings.theme) {
+      document.documentElement.setAttribute('data-theme', settings.theme);
+      if (settings.theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [settings.theme]);
 
   if (!user) {
     return (
@@ -62,7 +163,10 @@ const Settings = () => {
               <CardContent>
                 <div className="space-y-2">
                   <Label htmlFor="language">Language</Label>
-                  <Select value={language} onValueChange={setLanguage}>
+                  <Select 
+                    value={settings.language} 
+                    onValueChange={(value) => setSettings(prev => ({ ...prev, language: value }))}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a language" />
                     </SelectTrigger>
@@ -76,6 +180,7 @@ const Settings = () => {
                       <SelectItem value="ja">Japanese</SelectItem>
                       <SelectItem value="ko">Korean</SelectItem>
                       <SelectItem value="zh">Chinese</SelectItem>
+                      <SelectItem value="hi">Hindi</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -95,7 +200,10 @@ const Settings = () => {
               <CardContent>
                 <div className="space-y-2">
                   <Label htmlFor="theme">Theme</Label>
-                  <Select value={theme} onValueChange={setTheme}>
+                  <Select 
+                    value={settings.theme} 
+                    onValueChange={(value) => setSettings(prev => ({ ...prev, theme: value }))}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a theme" />
                     </SelectTrigger>
@@ -129,6 +237,22 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <div className="flex justify-end">
+              <Button onClick={handleSaveSettings} disabled={saving}>
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Settings
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </SidebarInset>

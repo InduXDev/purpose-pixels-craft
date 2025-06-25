@@ -1,16 +1,17 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Search, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Search, User, MessageCircle, FileText } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -19,19 +20,21 @@ interface Profile {
   avatar_url: string | null;
   bio: string | null;
   posts_count: number | null;
+  created_at: string;
 }
 
 const People = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const searchProfiles = async () => {
+  const handleSearch = async () => {
     if (!searchTerm.trim()) {
-      setProfiles([]);
+      setSearchResults([]);
       return;
     }
 
@@ -47,10 +50,10 @@ const People = () => {
         throw error;
       }
 
-      setProfiles(data || []);
+      setSearchResults(data || []);
     } catch (error: any) {
       toast({
-        title: "Error searching profiles",
+        title: "Error searching people",
         description: error.message,
         variant: "destructive",
       });
@@ -59,13 +62,11 @@ const People = () => {
     }
   };
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      searchProfiles();
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   if (!user) {
     return (
@@ -99,74 +100,152 @@ const People = () => {
           <h1 className="text-xl font-semibold">People</h1>
         </div>
         <div className="p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-6">
-              <div className="relative">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Find People</h2>
+              <p className="text-gray-600">Search for people by their username or name</p>
+            </div>
+
+            <div className="flex gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Search for people by username or name..."
+                  placeholder="Search by username or name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   className="pl-10"
                 />
               </div>
+              <Button onClick={handleSearch} disabled={loading}>
+                {loading ? 'Searching...' : 'Search'}
+              </Button>
             </div>
 
-            {loading && (
-              <div className="text-center py-8">
-                <p className="text-gray-600">Searching...</p>
-              </div>
-            )}
-
-            {!loading && searchTerm && profiles.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-gray-600">No profiles found matching "{searchTerm}"</p>
-              </div>
-            )}
-
-            {!searchTerm && !loading && (
-              <div className="text-center py-12">
-                <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Find People</h3>
-                <p className="text-gray-600">Search for other artisans by username or name</p>
-              </div>
-            )}
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {profiles.map((profile) => (
-                <Card key={profile.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <Avatar className="w-12 h-12">
-                        <AvatarImage src={profile.avatar_url || ''} />
-                        <AvatarFallback>
-                          <User className="w-6 h-6" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-gray-900 truncate">
-                          {profile.full_name || 'Anonymous'}
-                        </h3>
-                        <p className="text-sm text-gray-500 truncate">
-                          @{profile.username || 'user'}
-                        </p>
-                        {profile.bio && (
-                          <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                            {profile.bio}
-                          </p>
-                        )}
-                        <p className="text-xs text-orange-600 mt-1">
-                          {profile.posts_count || 0} posts
-                        </p>
+            {searchResults.length > 0 && (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {searchResults.map((profile) => (
+                  <Card key={profile.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={profile.avatar_url || ''} />
+                          <AvatarFallback>
+                            <User className="w-6 h-6" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg truncate">
+                            {profile.full_name || 'Anonymous User'}
+                          </CardTitle>
+                          <CardDescription className="truncate">
+                            @{profile.username || 'username'}
+                          </CardDescription>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      {profile.bio && (
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{profile.bio}</p>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center text-sm text-gray-500">
+                          <FileText className="w-4 h-4 mr-1" />
+                          {profile.posts_count || 0} posts
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => setSelectedProfile(profile)}
+                        >
+                          View Profile
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {searchTerm && !loading && searchResults.length === 0 && (
+              <div className="text-center py-8">
+                <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No people found</h3>
+                <p className="text-gray-600">Try searching with different keywords.</p>
+              </div>
+            )}
           </div>
         </div>
       </SidebarInset>
+
+      {/* Profile Dialog */}
+      <Dialog open={!!selectedProfile} onOpenChange={() => setSelectedProfile(null)}>
+        <DialogContent className="max-w-2xl">
+          {selectedProfile && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Profile</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage src={selectedProfile.avatar_url || ''} />
+                    <AvatarFallback>
+                      <User className="w-10 h-10" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h2 className="text-2xl font-bold">
+                      {selectedProfile.full_name || 'Anonymous User'}
+                    </h2>
+                    <p className="text-gray-600">@{selectedProfile.username || 'username'}</p>
+                  </div>
+                </div>
+
+                {selectedProfile.bio && (
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-2">Bio</h3>
+                    <p className="text-gray-600">{selectedProfile.bio}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-center">
+                        <h3 className="text-2xl font-bold text-orange-600">
+                          {selectedProfile.posts_count || 0}
+                        </h3>
+                        <p className="text-sm text-gray-600">Posts</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="text-center">
+                        <h3 className="text-2xl font-bold text-orange-600">
+                          {new Date(selectedProfile.created_at).getFullYear()}
+                        </h3>
+                        <p className="text-sm text-gray-600">Member Since</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button className="flex-1">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Message
+                  </Button>
+                  <Button variant="outline" className="flex-1">
+                    <User className="w-4 h-4 mr-2" />
+                    Follow
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

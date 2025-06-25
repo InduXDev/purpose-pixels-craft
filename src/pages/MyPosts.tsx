@@ -3,12 +3,14 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import PostCard from '@/components/PostCard';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { FileText, Calendar, Trash2, Loader2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface Post {
   id: string;
@@ -16,17 +18,12 @@ interface Post {
   content: string;
   image_url?: string;
   created_at: string;
-  user_id: string;
-  profiles?: {
-    username?: string;
-    full_name?: string;
-    avatar_url?: string;
-  };
 }
 
 const MyPosts = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -39,7 +36,7 @@ const MyPosts = () => {
 
     const fetchMyPosts = async () => {
       try {
-        const { data: postsData, error } = await supabase
+        const { data, error } = await supabase
           .from('posts')
           .select('*')
           .eq('user_id', user.id)
@@ -49,19 +46,7 @@ const MyPosts = () => {
           throw error;
         }
 
-        // Get user profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('username, full_name, avatar_url')
-          .eq('id', user.id)
-          .single();
-
-        const postsWithProfile = postsData?.map(post => ({
-          ...post,
-          profiles: profileData || undefined
-        })) || [];
-
-        setPosts(postsWithProfile);
+        setPosts(data || []);
       } catch (error: any) {
         toast({
           title: "Error loading posts",
@@ -75,6 +60,35 @@ const MyPosts = () => {
 
     fetchMyPosts();
   }, [user, toast]);
+
+  const handleDeletePost = async (postId: string) => {
+    setDeletingPostId(postId);
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', user?.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setPosts(posts.filter(post => post.id !== postId));
+      toast({
+        title: "Post deleted",
+        description: "Your post has been successfully deleted.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error deleting post",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingPostId(null);
+    }
+  };
 
   if (!user) {
     return (
@@ -99,57 +113,108 @@ const MyPosts = () => {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex w-full">
-        <AppSidebar />
-        <SidebarInset>
-          <div className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <h1 className="text-xl font-semibold">My Posts</h1>
-          </div>
-          <div className="flex items-center justify-center py-12">
-            <div className="flex items-center space-x-2">
-              <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
-              <span className="text-gray-600">Loading your posts...</span>
-            </div>
-          </div>
-        </SidebarInset>
-      </div>
-    );
-  }
-
   return (
     <div className="flex w-full">
       <AppSidebar />
       <SidebarInset>
-        <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
-          <div className="flex items-center gap-2">
-            <SidebarTrigger className="-ml-1" />
-            <h1 className="text-xl font-semibold">My Posts</h1>
-          </div>
-          <Button onClick={() => navigate('/create-post')} className="bg-orange-600 hover:bg-orange-700">
-            <PlusCircle className="w-4 h-4 mr-2" />
-            Create Post
-          </Button>
+        <div className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <h1 className="text-xl font-semibold">My Posts</h1>
         </div>
         <div className="p-6">
-          {posts.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
-              <p className="text-gray-600 mb-4">Start sharing your craft stories!</p>
-              <Button onClick={() => navigate('/create-post')} className="bg-orange-600 hover:bg-orange-700">
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Create Your First Post
-              </Button>
-            </div>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              {posts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
-          )}
+          <div className="max-w-4xl mx-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex items-center space-x-2">
+                  <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
+                  <span className="text-gray-600">Loading your posts...</span>
+                </div>
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
+                <p className="text-gray-600 mb-6">You haven't created any posts yet. Start sharing your story!</p>
+                <Button onClick={() => navigate('/create-post')}>
+                  Create Your First Post
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-900">Your Posts ({posts.length})</h2>
+                  <Button onClick={() => navigate('/create-post')}>
+                    Create New Post
+                  </Button>
+                </div>
+                
+                <div className="grid gap-6">
+                  {posts.map((post) => (
+                    <Card key={post.id} className="overflow-hidden">
+                      {post.image_url && (
+                        <div className="aspect-video overflow-hidden">
+                          <img
+                            src={post.image_url}
+                            alt={post.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-xl mb-2">{post.title}</CardTitle>
+                            <div className="flex items-center text-sm text-gray-500">
+                              <Calendar className="w-4 h-4 mr-1" />
+                              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                            </div>
+                          </div>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                disabled={deletingPostId === post.id}
+                              >
+                                {deletingPostId === post.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{post.title}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeletePost(post.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </CardHeader>
+                      {post.content && (
+                        <CardContent>
+                          <p className="text-gray-600">{post.content}</p>
+                        </CardContent>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </SidebarInset>
     </div>
