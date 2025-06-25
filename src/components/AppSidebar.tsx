@@ -1,5 +1,5 @@
 
-import { Home, PlusCircle, Settings, User, LogOut, Heart } from 'lucide-react';
+import { Home, PlusCircle, Settings, User, LogOut, Heart, Users, Store } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Sidebar,
@@ -31,6 +31,16 @@ const navigation = [
     title: 'My Posts',
     url: '/my-posts',
     icon: Heart,
+  },
+  {
+    title: 'People',
+    url: '/people',
+    icon: Users,
+  },
+  {
+    title: 'Store',
+    url: '/store',
+    icon: Store,
   },
   {
     title: 'Profile',
