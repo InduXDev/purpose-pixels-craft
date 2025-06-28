@@ -1,5 +1,4 @@
-
-import { Home, PlusCircle, Settings, User, LogOut, Heart, Users, Store, ShoppingCart, MessageSquare } from 'lucide-react';
+import { Home, PlusCircle, Settings, User, LogOut, Heart, Users, Store, ShoppingCart, MessageSquare, Info } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Sidebar,
@@ -66,6 +65,11 @@ const navigation = [
     title: 'Settings',
     url: '/settings',
     icon: Settings,
+  },
+  {
+    title: 'About',
+    url: '/about',
+    icon: Info,
   },
 ];
 

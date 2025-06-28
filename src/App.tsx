@@ -13,6 +13,7 @@ import CreatePost from "./pages/CreatePost";
 import MyPosts from "./pages/MyPosts";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import About from "./pages/About";
 import People from "./pages/People";
 import Store from "./pages/Store";
 import CreateProduct from "./pages/CreateProduct";
@@ -43,6 +44,7 @@ const App = () => {
                   <Route path="/my-posts" element={<MyPosts />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/about" element={<About />} />
                   <Route path="/people" element={<People />} />
                   <Route path="/store" element={<Store />} />
                   <Route path="/create-product" element={<CreateProduct />} />
