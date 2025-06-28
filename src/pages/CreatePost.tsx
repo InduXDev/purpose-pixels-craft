@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -66,10 +65,10 @@ const CreatePost = () => {
 
   if (!user) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-red-50">
-        <Card className="w-full max-w-md text-center">
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <Card className="w-full max-w-md text-center bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="pt-6">
-            <p className="text-gray-600 mb-4">Please log in to create posts</p>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">Please log in to create posts</p>
             <Button onClick={() => navigate('/auth')} className="bg-orange-600 hover:bg-orange-700">
               Go to Login
             </Button>
@@ -80,27 +79,27 @@ const CreatePost = () => {
   }
 
   return (
-    <div className="flex-1 min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 p-6">
+    <div className="flex-1 min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
       <div className="max-w-2xl mx-auto">
         <div className="mb-8 animate-fade-in">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Post</h1>
-          <p className="text-gray-600">Share your story with the community</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Create New Post</h1>
+          <p className="text-gray-600 dark:text-gray-300">Share your story with the community</p>
         </div>
 
-        <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm animate-scale-in">
+        <Card className="shadow-xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm animate-scale-in">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-orange-600" />
+            <CardTitle className="flex items-center space-x-2 text-gray-900 dark:text-gray-100">
+              <FileText className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               <span>Post Details</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-gray-600 dark:text-gray-300">
               Fill in the details below to create your post
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                   <Type className="w-4 h-4" />
                   <span>Title</span>
                 </label>
@@ -109,13 +108,13 @@ const CreatePost = () => {
                   placeholder="Enter your post title..."
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="transition-all duration-300 focus:ring-2 focus:ring-orange-500"
+                  className="transition-all duration-300 focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                   <FileText className="w-4 h-4" />
                   <span>Content</span>
                 </label>
@@ -123,13 +122,13 @@ const CreatePost = () => {
                   placeholder="Tell your story..."
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="min-h-32 transition-all duration-300 focus:ring-2 focus:ring-orange-500"
+                  className="min-h-32 transition-all duration-300 focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                   rows={6}
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                   <ImageIcon className="w-4 h-4" />
                   <span>Image URL (optional)</span>
                 </label>
@@ -138,14 +137,14 @@ const CreatePost = () => {
                   placeholder="https://example.com/image.jpg"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
-                  className="transition-all duration-300 focus:ring-2 focus:ring-orange-500"
+                  className="transition-all duration-300 focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
                 />
                 {imageUrl && (
                   <div className="mt-3 animate-fade-in">
                     <img
                       src={imageUrl}
                       alt="Preview"
-                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200"
+                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600"
                       onError={() => {
                         toast({
                           title: "Invalid image URL",
@@ -163,7 +162,7 @@ const CreatePost = () => {
                   type="button"
                   variant="outline"
                   onClick={() => navigate('/')}
-                  className="flex-1 transition-all duration-300 hover:scale-105"
+                  className="flex-1 transition-all duration-300 hover:scale-105 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
                   Cancel
                 </Button>
