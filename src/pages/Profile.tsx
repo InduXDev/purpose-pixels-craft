@@ -22,6 +22,7 @@ interface Profile {
   avatar_url: string | null;
   bio: string | null;
   posts_count: number | null;
+  created_at: string;
 }
 
 interface Product {
@@ -183,8 +184,8 @@ const Profile = () => {
           </div>
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h2>
-              <p className="text-gray-600 mb-6">You need to be logged in to view your profile.</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Please Log In</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">You need to be logged in to view your profile.</p>
               <Button onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
@@ -239,13 +240,13 @@ const Profile = () => {
                         profile?.full_name || 'Add your name'
                       )}
                     </h2>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 dark:text-gray-400">
                       @{editing ? (
                         <Input
                           value={editForm.username}
                           onChange={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
                           placeholder="username"
-                          className="inline w-auto border-0 p-0 h-auto text-gray-600"
+                          className="inline w-auto border-0 p-0 h-auto text-gray-600 dark:text-gray-400"
                         />
                       ) : (
                         profile?.username || 'username'
@@ -257,7 +258,7 @@ const Profile = () => {
               <CardContent className="space-y-6">
                 {editing && (
                   <div>
-                    <Label htmlFor="avatar_url" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="avatar_url" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Profile Picture URL
                     </Label>
                     <Input
@@ -271,7 +272,7 @@ const Profile = () => {
                 )}
 
                 <div>
-                  <Label htmlFor="bio" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="bio" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Bio
                   </Label>
                   {editing ? (
@@ -284,7 +285,7 @@ const Profile = () => {
                       rows={4}
                     />
                   ) : (
-                    <p className="mt-1 text-gray-600">
+                    <p className="mt-1 text-gray-600 dark:text-gray-400">
                       {profile?.bio || 'Add a bio to tell people about yourself and your craft.'}
                     </p>
                   )}
@@ -297,7 +298,7 @@ const Profile = () => {
                         <h3 className="text-2xl font-bold text-orange-600">
                           {profile?.posts_count || 0}
                         </h3>
-                        <p className="text-sm text-gray-600">Posts</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Posts</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -307,7 +308,7 @@ const Profile = () => {
                         <h3 className="text-2xl font-bold text-orange-600">
                           {products.length}
                         </h3>
-                        <p className="text-sm text-gray-600">Products</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Products</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -315,9 +316,9 @@ const Profile = () => {
                     <CardContent className="pt-6">
                       <div className="text-center">
                         <h3 className="text-2xl font-bold text-orange-600">
-                          {new Date(profile?.id ? '2024-01-01' : '').getFullYear() || 'N/A'}
+                          {profile?.created_at ? new Date(profile.created_at).getFullYear() : 'N/A'}
                         </h3>
-                        <p className="text-sm text-gray-600">Member Since</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Member Since</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -359,7 +360,7 @@ const Profile = () => {
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {products.map((product) => (
                       <Card key={product.id} className="relative">
-                        <div className="aspect-square overflow-hidden bg-gray-100 rounded-t-lg">
+                        <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800 rounded-t-lg">
                           <img
                             src={product.image_url || '/placeholder.svg'}
                             alt={product.title}
@@ -376,7 +377,7 @@ const Profile = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="absolute top-2 right-2 bg-white/80 hover:bg-white text-red-600 hover:text-red-700"
+                                className="absolute top-2 right-2 bg-white/80 hover:bg-white text-red-600 hover:text-red-700 dark:bg-gray-800/80 dark:hover:bg-gray-800"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
