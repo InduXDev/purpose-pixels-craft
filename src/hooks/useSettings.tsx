@@ -86,17 +86,34 @@ const useSettings = () => {
 
       // Save to database if user is authenticated
       if (user) {
-        const { error } = await supabase
+        // First try to update existing settings
+        const { data: updateData, error: updateError } = await supabase
           .from('user_settings')
-          .upsert({
-            user_id: user.id,
+          .update({
             language: newSettings.language,
             theme: newSettings.theme,
             updated_at: new Date().toISOString()
-          });
+          })
+          .eq('user_id', user.id)
+          .select()
+          .single();
 
-        if (error) {
-          throw error;
+        // If update fails (no existing record), try to insert
+        if (updateError && updateError.code === 'PGRST116') {
+          const { error: insertError } = await supabase
+            .from('user_settings')
+            .insert({
+              user_id: user.id,
+              language: newSettings.language,
+              theme: newSettings.theme,
+              updated_at: new Date().toISOString()
+            });
+
+          if (insertError) {
+            throw insertError;
+          }
+        } else if (updateError) {
+          throw updateError;
         }
       }
 
@@ -105,9 +122,10 @@ const useSettings = () => {
         description: "Your preferences have been updated successfully.",
       });
     } catch (error: any) {
+      console.error('Error saving settings:', error);
       toast({
         title: "Error saving settings",
-        description: error.message,
+        description: error.message || "Failed to save settings. Please try again.",
         variant: "destructive",
       });
     } finally {
