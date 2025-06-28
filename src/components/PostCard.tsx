@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogTitle } from './ui/dialog';
 import type { Database } from '@/integrations/supabase/types';
+import { clsx } from 'clsx';
 
 type PostLike = Database['public']['Tables']['post_likes']['Row'];
 type PostComment = Database['public']['Tables']['post_comments']['Row'] & {
@@ -32,9 +33,11 @@ interface Post {
 interface PostCardProps {
   post: Post;
   onUserClick?: (userId: string) => void;
+  autoOpenComments?: boolean;
+  onCommentClick?: () => void;
 }
 
-const PostCard = ({ post, onUserClick }: PostCardProps) => {
+const PostCard = ({ post, onUserClick, autoOpenComments, onCommentClick }: PostCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [liked, setLiked] = useState(false);
@@ -71,8 +74,12 @@ const PostCard = ({ post, onUserClick }: PostCardProps) => {
     };
     fetchCounts();
     fetchLiked();
+    // Auto open comments if requested
+    if (autoOpenComments) {
+      openComments();
+    }
     return () => { isMounted = false; };
-  }, [post.id, user]);
+  }, [post.id, user, autoOpenComments]);
 
   // Like/unlike logic
   const handleLike = async () => {
@@ -108,6 +115,14 @@ const PostCard = ({ post, onUserClick }: PostCardProps) => {
       .order('created_at', { ascending: false });
     if (!error && data) {
       setComments(data as PostComment[]);
+    }
+  };
+
+  const handleCommentButton = () => {
+    if (onCommentClick) {
+      onCommentClick();
+    } else {
+      openComments();
     }
   };
 
@@ -147,7 +162,10 @@ const PostCard = ({ post, onUserClick }: PostCardProps) => {
   };
 
   return (
-    <Card className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm animate-fade-in">
+    <Card className={clsx(
+      'group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm animate-fade-in',
+      'focus-within:shadow-xl focus-within:scale-[1.01] transition-transform duration-300 ease-out'
+    )}>
       {post.image_url && (
         <div className="aspect-video overflow-hidden">
           <img
@@ -211,37 +229,36 @@ const PostCard = ({ post, onUserClick }: PostCardProps) => {
         {/* Actions */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
           <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
+              className={clsx(
+                'flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors duration-200',
+                'active:scale-90 focus:outline-none',
+                liked ? 'animate-like-pop' : ''
+              )}
               onClick={handleLike}
-              className={`transition-all duration-300 hover:scale-110 ${
-                liked ? 'text-red-500 hover:text-red-600 dark:hover:text-red-400' : 'text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400'
-              }`}
+              aria-label={liked ? 'Unlike' : 'Like'}
             >
               <Heart className={`w-4 h-4 mr-1 ${liked ? 'fill-current' : ''}`} />
-              {likeCount}
-            </Button>
+              <span className="transition-colors duration-200">{likeCount}</span>
+            </button>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={openComments}
-              className="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-all duration-300 hover:scale-110"
+            <button
+              className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 active:scale-90 focus:outline-none"
+              onClick={handleCommentButton}
+              aria-label="Comment"
             >
               <MessageCircle className="w-4 h-4 mr-1" />
-              {commentCount}
-            </Button>
+              <span>{commentCount}</span>
+            </button>
           </div>
           
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            className="flex items-center gap-1 text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors duration-200 active:scale-90 focus:outline-none"
             onClick={handleShare}
-            className="text-gray-500 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-all duration-300 hover:scale-110"
+            aria-label="Share"
           >
             <Share2 className="w-4 h-4" />
-          </Button>
+          </button>
         </div>
       </CardContent>
 

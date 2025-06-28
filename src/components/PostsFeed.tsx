@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import PostCard from './PostCard';
 import { useToast } from '@/hooks/use-toast';
@@ -25,8 +25,10 @@ const PostsFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [autoOpenComments, setAutoOpenComments] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -67,6 +69,16 @@ const PostsFeed = () => {
         }));
 
         setPosts(postsWithProfiles);
+
+        // Check for ?post=... param
+        const postId = searchParams.get('post');
+        if (postId) {
+          const found = postsWithProfiles.find(p => p.id === postId);
+          if (found) {
+            setSelectedPost(found);
+            setAutoOpenComments(false);
+          }
+        }
       } catch (error: any) {
         toast({
           title: "Error loading posts",
@@ -98,11 +110,18 @@ const PostsFeed = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [toast]);
+  }, [toast, searchParams]);
 
   const handleUserClick = (userId: string) => {
     setSelectedPost(null);
     navigate(`/profiles/${userId}`);
+  };
+
+  // Open post in modal and optionally focus comments
+  const handleOpenPost = (post: Post, focusComments = false) => {
+    setSelectedPost(post);
+    setAutoOpenComments(focusComments);
+    setSearchParams(focusComments ? { post: post.id, comments: '1' } : { post: post.id });
   };
 
   if (loading) {
@@ -128,8 +147,8 @@ const PostsFeed = () => {
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Community Stories</h2>
-        <p className="text-gray-600 dark:text-gray-400">Discover amazing stories from our artisan community</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2 animate-fade-in">Community Stories</h2>
+        <p className="text-gray-600 dark:text-gray-400 animate-fade-in delay-100">Discover amazing stories from our artisan community</p>
       </div>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
@@ -137,22 +156,30 @@ const PostsFeed = () => {
           <div
             key={post.id}
             style={{
-              animationDelay: `${index * 0.1}s`
+              animationDelay: `${index * 80}ms`
             }}
-            onClick={() => setSelectedPost(post)}
-            className="cursor-pointer"
+            onClick={() => handleOpenPost(post, false)}
+            className="cursor-pointer animate-fade-slide-in"
           >
-            <PostCard post={post} />
+            <PostCard
+              post={post}
+              onUserClick={handleUserClick}
+              autoOpenComments={false}
+              onCommentClick={() => handleOpenPost(post, true)}
+            />
           </div>
         ))}
       </div>
       {/* Big view modal */}
-      <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
-        <DialogContent className="max-w-2xl w-full">
+      <Dialog open={!!selectedPost} onOpenChange={() => { setSelectedPost(null); setSearchParams({}); }}>
+        <DialogContent className="max-w-2xl w-full animate-modal-pop">
           {selectedPost && (
-            <div className="overflow-y-auto max-h-[80vh]">
-              <PostCard post={selectedPost} onUserClick={handleUserClick} />
-              {/* Optionally, you can add more details or comments here */}
+            <div className="overflow-y-auto max-h-[80vh] animate-fade-in">
+              <PostCard
+                post={selectedPost}
+                onUserClick={handleUserClick}
+                autoOpenComments={autoOpenComments}
+              />
             </div>
           )}
         </DialogContent>
