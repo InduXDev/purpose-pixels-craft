@@ -1,12 +1,18 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { X, Clock, Leaf, Heart, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface ProductImage {
+  id: string;
+  image_url: string;
+  order_index: number;
+}
 
 interface ProductStoryProps {
   product: {
@@ -18,7 +24,7 @@ interface ProductStoryProps {
     impact: string[];
     timeToMake: string;
     materials: string;
-    originalId?: string; // Add this to track the original product ID from database
+    originalId?: string;
   };
   onClose: () => void;
 }
@@ -28,6 +34,34 @@ const ProductStory = ({ product, onClose }: ProductStoryProps) => {
   const { toast } = useToast();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
+  const [productImages, setProductImages] = useState<ProductImage[]>([]);
+
+  useEffect(() => {
+    if (product.originalId) {
+      fetchProductImages();
+    }
+  }, [product.originalId]);
+
+  const fetchProductImages = async () => {
+    if (!product.originalId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('product_images')
+        .select('*')
+        .eq('product_id', product.originalId)
+        .order('order_index');
+
+      if (error) throw error;
+      setProductImages(data || []);
+    } catch (error: any) {
+      console.error('Error fetching product images:', error);
+    }
+  };
+
+  const images = productImages.length > 0 
+    ? productImages.map(img => img.image_url)
+    : [product.image];
 
   const handleAddToCart = async () => {
     if (!user) {
@@ -130,11 +164,29 @@ const ProductStory = ({ product, onClose }: ProductStoryProps) => {
         <div className="grid md:grid-cols-2 h-full">
           {/* Image Section */}
           <div className="relative">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-full object-cover"
-            />
+            {images.length === 1 ? (
+              <img
+                src={images[0]}
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Carousel className="w-full h-full">
+                <CarouselContent>
+                  {images.map((image, index) => (
+                    <CarouselItem key={index}>
+                      <img
+                        src={image}
+                        alt={`${product.name} ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2" />
+                <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2" />
+              </Carousel>
+            )}
             <Button
               variant="ghost"
               size="sm"

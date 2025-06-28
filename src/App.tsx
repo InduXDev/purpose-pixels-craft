@@ -15,6 +15,10 @@ import Settings from "./pages/Settings";
 import People from "./pages/People";
 import Store from "./pages/Store";
 import CreateProduct from "./pages/CreateProduct";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import Wishlist from "./pages/Wishlist";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +41,10 @@ const App = () => (
               <Route path="/people" element={<People />} />
               <Route path="/store" element={<Store />} />
               <Route path="/create-product" element={<CreateProduct />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/wishlist" element={<Wishlist />} />
+              <Route path="/messages" element={<Messages />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
