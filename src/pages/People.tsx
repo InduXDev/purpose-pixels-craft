@@ -104,6 +104,16 @@ const People = () => {
     }
   };
 
+  const handleProductClick = (product: Product, userId: string) => {
+    // Navigate to store with user filter
+    navigate(`/store?user=${userId}&product=${product.id}`);
+  };
+
+  const handleViewAllProducts = (userId: string) => {
+    // Navigate to store filtered by user
+    navigate(`/store?user=${userId}`);
+  };
+
   if (!user) {
     return (
       <div className="flex w-full">
@@ -111,12 +121,12 @@ const People = () => {
         <SidebarInset>
           <div className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
-            <h1 className="text-xl font-semibold">People</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">People</h1>
           </div>
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h2>
-              <p className="text-gray-600 mb-6">You need to be logged in to search for people.</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Please Log In</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">You need to be logged in to search for people.</p>
               <Button onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
@@ -133,7 +143,7 @@ const People = () => {
       <SidebarInset>
         <div className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
-          <h1 className="text-xl font-semibold">People</h1>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">People</h1>
         </div>
         <div className="p-6">
           <div className="max-w-4xl mx-auto space-y-6">
@@ -171,10 +181,10 @@ const People = () => {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg truncate">
+                          <CardTitle className="text-lg truncate text-gray-900 dark:text-gray-100">
                             {profile.full_name || 'Anonymous User'}
                           </CardTitle>
-                          <CardDescription className="truncate">
+                          <CardDescription className="truncate text-gray-600 dark:text-gray-400">
                             @{profile.username || 'username'}
                           </CardDescription>
                         </div>
@@ -219,7 +229,7 @@ const People = () => {
           {selectedProfile && (
             <>
               <DialogHeader>
-                <DialogTitle>Profile</DialogTitle>
+                <DialogTitle className="text-gray-900 dark:text-gray-100">Profile</DialogTitle>
               </DialogHeader>
               <div className="space-y-6">
                 <div className="flex items-center space-x-4">
@@ -230,7 +240,7 @@ const People = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {selectedProfile.full_name || 'Anonymous User'}
                     </h2>
                     <p className="text-gray-600 dark:text-gray-400">@{selectedProfile.username || 'username'}</p>
@@ -273,13 +283,28 @@ const People = () => {
 
                 {/* User's Products */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Products</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">Products</h3>
+                    {userProducts.length > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewAllProducts(selectedProfile.id)}
+                      >
+                        View All Products
+                      </Button>
+                    )}
+                  </div>
                   {loadingProducts ? (
                     <div className="text-center py-4">Loading products...</div>
                   ) : userProducts.length > 0 ? (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {userProducts.map((product) => (
-                        <Card key={product.id}>
+                        <Card 
+                          key={product.id} 
+                          className="cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => handleProductClick(product, selectedProfile.id)}
+                        >
                           <div className="aspect-square overflow-hidden bg-gray-100 rounded-t-lg">
                             <img
                               src={product.image_url || '/placeholder.svg'}
@@ -288,7 +313,7 @@ const People = () => {
                             />
                           </div>
                           <CardContent className="p-4">
-                            <h4 className="font-medium line-clamp-1">{product.title}</h4>
+                            <h4 className="font-medium line-clamp-1 text-gray-900 dark:text-gray-100">{product.title}</h4>
                             <p className="text-lg font-bold text-orange-600">
                               ₹{product.price.toLocaleString('en-IN')}
                             </p>

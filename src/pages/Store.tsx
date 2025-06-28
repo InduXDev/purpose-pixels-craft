@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Plus, MapPin, Clock, Star, Loader2 } from 'lucide-react';
+import { Plus, MapPin, Clock, Star, Loader2, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import ProductStory from '@/components/ProductStory';
 
@@ -34,17 +34,40 @@ const Store = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [filteredUser, setFilteredUser] = useState<any>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const { data: productsData, error: productsError } = await supabase
+        const userId = searchParams.get('user');
+        const productId = searchParams.get('product');
+        
+        let query = supabase
           .from('products')
           .select('*')
           .order('created_at', { ascending: false });
+
+        // Filter by user if specified
+        if (userId) {
+          query = query.eq('user_id', userId);
+          
+          // Fetch user profile for display
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+          
+          if (profileData) {
+            setFilteredUser(profileData);
+          }
+        }
+
+        const { data: productsData, error: productsError } = await query;
 
         if (productsError) {
           throw productsError;
@@ -71,6 +94,14 @@ const Store = () => {
         }));
 
         setProducts(productsWithProfiles);
+
+        // Auto-open product if specified in URL
+        if (productId) {
+          const product = productsWithProfiles.find(p => p.id === productId);
+          if (product) {
+            handleViewDetails(product);
+          }
+        }
       } catch (error: any) {
         toast({
           title: "Error loading products",
@@ -83,7 +114,7 @@ const Store = () => {
     };
 
     fetchProducts();
-  }, [toast]);
+  }, [toast, searchParams]);
 
   const handleViewDetails = (product: Product) => {
     // Convert product to the format expected by ProductStory
@@ -101,6 +132,11 @@ const Store = () => {
     setSelectedProduct(storyProduct);
   };
 
+  const clearFilter = () => {
+    navigate('/store');
+    setFilteredUser(null);
+  };
+
   if (!user) {
     return (
       <div className="flex w-full">
@@ -108,12 +144,12 @@ const Store = () => {
         <SidebarInset>
           <div className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
-            <h1 className="text-xl font-semibold">Store</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Store</h1>
           </div>
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h2>
-              <p className="text-gray-600 mb-6">You need to be logged in to access the store.</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Please Log In</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">You need to be logged in to access the store.</p>
               <Button onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
@@ -131,12 +167,25 @@ const Store = () => {
         <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
-            <h1 className="text-xl font-semibold">Store</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Store</h1>
+            {filteredUser && (
+              <Badge variant="secondary" className="ml-2">
+                {filteredUser.full_name || filteredUser.username || 'User'}'s Products
+              </Badge>
+            )}
           </div>
-          <Button onClick={() => navigate('/create-product')}>
-            <Plus className="w-4 h-4 mr-2" />
-            List Product
-          </Button>
+          <div className="flex items-center gap-2">
+            {filteredUser && (
+              <Button variant="outline" size="sm" onClick={clearFilter}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                All Products
+              </Button>
+            )}
+            <Button onClick={() => navigate('/create-product')}>
+              <Plus className="w-4 h-4 mr-2" />
+              List Product
+            </Button>
+          </div>
         </div>
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
@@ -144,23 +193,42 @@ const Store = () => {
               <div className="flex items-center justify-center py-12">
                 <div className="flex items-center space-x-2">
                   <Loader2 className="w-6 h-6 animate-spin text-orange-600" />
-                  <span className="text-gray-600">Loading products...</span>
+                  <span className="text-gray-600 dark:text-gray-400">Loading products...</span>
                 </div>
               </div>
             ) : products.length === 0 ? (
               <div className="text-center py-12">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No products available</h3>
-                <p className="text-gray-600 mb-6">Be the first to list a product in our store!</p>
-                <Button onClick={() => navigate('/create-product')}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  List Your First Product
-                </Button>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  {filteredUser ? 'No products from this user' : 'No products available'}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  {filteredUser 
+                    ? `${filteredUser.full_name || filteredUser.username || 'This user'} hasn't listed any products yet.`
+                    : 'Be the first to list a product in our store!'
+                  }
+                </p>
+                {!filteredUser && (
+                  <Button onClick={() => navigate('/create-product')}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    List Your First Product
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-6">
                 <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Artisan Marketplace</h2>
-                  <p className="text-gray-600">Discover unique handcrafted items from our community</p>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                    {filteredUser 
+                      ? `${filteredUser.full_name || filteredUser.username || 'User'}'s Products`
+                      : 'Artisan Marketplace'
+                    }
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {filteredUser 
+                      ? `Discover unique handcrafted items from ${filteredUser.full_name || filteredUser.username || 'this artisan'}`
+                      : 'Discover unique handcrafted items from our community'
+                    }
+                  </p>
                 </div>
                 
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -176,21 +244,21 @@ const Store = () => {
                       <CardHeader className="pb-2">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <CardTitle className="text-lg line-clamp-1">{product.title}</CardTitle>
-                            <CardDescription className="text-sm">
+                            <CardTitle className="text-lg line-clamp-1 text-gray-900 dark:text-gray-100">{product.title}</CardTitle>
+                            <CardDescription className="text-sm text-gray-600 dark:text-gray-400">
                               by {product.profiles?.full_name || product.profiles?.username || 'Anonymous'}
                             </CardDescription>
                           </div>
                           <div className="flex items-center">
                             <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                            <span className="text-sm text-gray-600 ml-1">4.8</span>
+                            <span className="text-sm text-gray-600 dark:text-gray-400 ml-1">4.8</span>
                           </div>
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
                         <div className="space-y-3">
                           {product.description && (
-                            <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">{product.description}</p>
                           )}
                           
                           <div className="flex flex-wrap gap-1">
@@ -206,14 +274,14 @@ const Store = () => {
                             <div className="text-xl font-bold text-orange-600">
                               ₹{product.price.toLocaleString('en-IN')}
                             </div>
-                            <div className="flex items-center text-xs text-gray-500">
+                            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                               <Clock className="w-3 h-3 mr-1" />
                               {formatDistanceToNow(new Date(product.created_at), { addSuffix: true })}
                             </div>
                           </div>
 
                           {product.location && (
-                            <div className="flex items-center text-sm text-gray-500">
+                            <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                               <MapPin className="w-4 h-4 mr-1" />
                               {product.location}
                             </div>
