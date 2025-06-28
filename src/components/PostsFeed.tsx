@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import PostCard from './PostCard';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +17,7 @@ interface Post {
     username?: string;
     full_name?: string;
     avatar_url?: string;
+    id?: string;
   };
 }
 
@@ -24,6 +26,7 @@ const PostsFeed = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -97,6 +100,11 @@ const PostsFeed = () => {
     };
   }, [toast]);
 
+  const handleUserClick = (userId: string) => {
+    setSelectedPost(null);
+    navigate(`/profiles/${userId}`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -143,7 +151,7 @@ const PostsFeed = () => {
         <DialogContent className="max-w-2xl w-full">
           {selectedPost && (
             <div className="overflow-y-auto max-h-[80vh]">
-              <PostCard post={selectedPost} />
+              <PostCard post={selectedPost} onUserClick={handleUserClick} />
               {/* Optionally, you can add more details or comments here */}
             </div>
           )}
