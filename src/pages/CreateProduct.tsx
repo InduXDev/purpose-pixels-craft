@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import ImageUpload from '@/components/ImageUpload';
+import MultiImageUpload from '@/components/MultiImageUpload';
 import ContentWithVideos from '@/components/ContentWithVideos';
 import { Package, Upload, Loader2, Eye, EyeOff } from 'lucide-react';
 import { findVideoUrls } from '@/lib/videoEmbed';
@@ -21,11 +21,11 @@ const CreateProduct = () => {
     title: '',
     description: '',
     price: '',
-    image_url: '',
     category: '',
     condition: '',
     location: '',
   });
+  const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const { user } = useAuth();
@@ -60,15 +60,25 @@ const CreateProduct = () => {
       return;
     }
 
+    if (images.length === 0) {
+      toast({
+        title: "Add at least one image",
+        description: "Please upload at least one image for your product.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Insert product with first image as main
+      const { data: product, error } = await supabase
         .from('products')
         .insert({
           title: formData.title,
           description: formData.description || null,
           price: parseFloat(formData.price),
-          image_url: formData.image_url || null,
+          image_url: images[0],
           category: formData.category || null,
           condition: formData.condition || null,
           location: formData.location || null,
@@ -79,6 +89,21 @@ const CreateProduct = () => {
 
       if (error) {
         throw error;
+      }
+
+      // Insert all images into product_images
+      const productImages = images.map((url, idx) => ({
+        product_id: product.id,
+        image_url: url,
+        order_index: idx,
+      }));
+      if (productImages.length > 0) {
+        const { error: imgError } = await supabase
+          .from('product_images')
+          .insert(productImages);
+        if (imgError) {
+          throw imgError;
+        }
       }
 
       toast({
@@ -197,13 +222,14 @@ const CreateProduct = () => {
                       </div>
                     </div>
 
-                    <ImageUpload
-                      value={formData.image_url}
-                      onChange={(url) => handleInputChange('image_url', url)}
-                      label="Product Image"
-                      placeholder="Upload product image or enter URL"
+                    <MultiImageUpload
+                      values={images}
+                      onChange={setImages}
+                      label="Product Images"
+                      placeholder="Upload product images or enter URLs"
                       showPreview={true}
                       maxSize={5}
+                      maxImages={6}
                     />
 
                     <div className="grid grid-cols-2 gap-4">
@@ -319,13 +345,17 @@ const CreateProduct = () => {
                         </div>
                       )}
 
-                      {formData.image_url && (
-                        <div className="aspect-video overflow-hidden rounded-lg mb-4">
-                          <img
-                            src={formData.image_url}
-                            alt="Product preview"
-                            className="w-full h-full object-cover"
-                          />
+                      {images.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                          {images.map((url, idx) => (
+                            <div key={idx} className="aspect-video overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                              <img
+                                src={url}
+                                alt={`Product preview ${idx + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ))}
                         </div>
                       )}
 
@@ -349,7 +379,7 @@ const CreateProduct = () => {
                         </div>
                       )}
 
-                      {!formData.title && !formData.description && !formData.image_url && (
+                      {!formData.title && !formData.description && images.length === 0 && (
                         <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                           <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
                           <p>Start filling in the form to see a preview of your product</p>

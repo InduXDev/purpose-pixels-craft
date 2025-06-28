@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import PostCard from './PostCard';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { Dialog, DialogContent } from './ui/dialog';
 
 interface Post {
   id: string;
@@ -21,6 +22,7 @@ interface Post {
 const PostsFeed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -129,11 +131,24 @@ const PostsFeed = () => {
             style={{
               animationDelay: `${index * 0.1}s`
             }}
+            onClick={() => setSelectedPost(post)}
+            className="cursor-pointer"
           >
             <PostCard post={post} />
           </div>
         ))}
       </div>
+      {/* Big view modal */}
+      <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
+        <DialogContent className="max-w-2xl w-full">
+          {selectedPost && (
+            <div className="overflow-y-auto max-h-[80vh]">
+              <PostCard post={selectedPost} />
+              {/* Optionally, you can add more details or comments here */}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
