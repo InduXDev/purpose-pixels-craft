@@ -114,7 +114,7 @@ const PostsFeed = () => {
 
   const handleUserClick = (userId: string) => {
     setSelectedPost(null);
-    navigate(`/profiles/${userId}`);
+    navigate(`/profile?user=${userId}`);
   };
 
   // Open post in modal and optionally focus comments

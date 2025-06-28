@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { User, Edit2, Save, X, Trash2 } from 'lucide-react';
+import { User, Edit2, Save, X, Trash2, ArrowLeft } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface Profile {
@@ -44,12 +43,17 @@ const Profile = () => {
     bio: '',
     avatar_url: '',
   });
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Get the user ID to display - either from query params (viewing other user) or current user
+  const targetUserId = searchParams.get('user') || user?.id;
+  const isViewingOtherUser = searchParams.get('user') && searchParams.get('user') !== user?.id;
+
   useEffect(() => {
-    if (!user) {
+    if (!targetUserId) {
       setLoading(false);
       return;
     }
@@ -59,7 +63,7 @@ const Profile = () => {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', targetUserId)
           .single();
 
         if (error) {
@@ -67,12 +71,14 @@ const Profile = () => {
         }
 
         setProfile(data);
-        setEditForm({
-          username: data.username || '',
-          full_name: data.full_name || '',
-          bio: data.bio || '',
-          avatar_url: data.avatar_url || '',
-        });
+        if (!isViewingOtherUser) {
+          setEditForm({
+            username: data.username || '',
+            full_name: data.full_name || '',
+            bio: data.bio || '',
+            avatar_url: data.avatar_url || '',
+          });
+        }
       } catch (error: any) {
         toast({
           title: "Error loading profile",
@@ -87,7 +93,7 @@ const Profile = () => {
         const { data, error } = await supabase
           .from('products')
           .select('id, title, price, image_url, created_at')
-          .eq('user_id', user.id)
+          .eq('user_id', targetUserId)
           .order('created_at', { ascending: false })
           .limit(6);
 
@@ -105,7 +111,7 @@ const Profile = () => {
 
     fetchProfile();
     fetchUserProducts();
-  }, [user, toast]);
+  }, [targetUserId, isViewingOtherUser, toast]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -173,7 +179,7 @@ const Profile = () => {
     }
   };
 
-  if (!user) {
+  if (!user && !searchParams.get('user')) {
     return (
       <div className="flex w-full">
         <AppSidebar />
@@ -203,9 +209,22 @@ const Profile = () => {
         <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
-            <h1 className="text-xl font-semibold">Profile</h1>
+            {isViewingOtherUser && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(-1)}
+                className="mr-2"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            )}
+            <h1 className="text-xl font-semibold">
+              {isViewingOtherUser ? 'User Profile' : 'Profile'}
+            </h1>
           </div>
-          {!editing && (
+          {!isViewingOtherUser && !editing && (
             <Button 
               onClick={() => setEditing(true)} 
               variant="outline"
@@ -220,7 +239,7 @@ const Profile = () => {
           <div className="max-w-4xl mx-auto space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
+                <CardTitle className="flex items-center space-x-4">
                   <Avatar className="w-16 h-16">
                     <AvatarImage src={profile?.avatar_url || ''} />
                     <AvatarFallback>
@@ -229,7 +248,7 @@ const Profile = () => {
                   </Avatar>
                   <div className="flex-1">
                     <h2 className="text-xl font-bold">
-                      {editing ? (
+                      {editing && !isViewingOtherUser ? (
                         <Input
                           value={editForm.full_name}
                           onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
@@ -241,7 +260,7 @@ const Profile = () => {
                       )}
                     </h2>
                     <p className="text-gray-600 dark:text-gray-400">
-                      @{editing ? (
+                      @{editing && !isViewingOtherUser ? (
                         <Input
                           value={editForm.username}
                           onChange={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
@@ -255,8 +274,8 @@ const Profile = () => {
                   </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {editing && (
+              <CardContent className="space-y-4">
+                {editing && !isViewingOtherUser && (
                   <div>
                     <Label htmlFor="avatar_url" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Profile Picture URL
@@ -275,7 +294,7 @@ const Profile = () => {
                   <Label htmlFor="bio" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Bio
                   </Label>
-                  {editing ? (
+                  {editing && !isViewingOtherUser ? (
                     <Textarea
                       id="bio"
                       value={editForm.bio}
@@ -291,7 +310,7 @@ const Profile = () => {
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Card>
                     <CardContent className="pt-6">
                       <div className="text-center">
@@ -324,7 +343,7 @@ const Profile = () => {
                   </Card>
                 </div>
 
-                {editing && (
+                {editing && !isViewingOtherUser && (
                   <div className="flex gap-2 justify-end">
                     <Button 
                       variant="outline" 
@@ -351,16 +370,16 @@ const Profile = () => {
             </Card>
 
             {/* User's Products */}
-            {products.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Your Products</CardTitle>
-                </CardHeader>
-                <CardContent>
+            <Card>
+              <CardHeader>
+                <CardTitle>Products</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {products.length > 0 ? (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {products.map((product) => (
-                      <Card key={product.id} className="relative">
-                        <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800 rounded-t-lg">
+                      <Card key={product.id} className="overflow-hidden">
+                        <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700">
                           <img
                             src={product.image_url || '/placeholder.svg'}
                             alt={product.title}
@@ -368,45 +387,52 @@ const Profile = () => {
                           />
                         </div>
                         <CardContent className="p-4">
-                          <h3 className="font-medium line-clamp-1">{product.title}</h3>
+                          <h4 className="font-medium line-clamp-1">{product.title}</h4>
                           <p className="text-lg font-bold text-orange-600">
                             ₹{product.price.toLocaleString('en-IN')}
                           </p>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="absolute top-2 right-2 bg-white/80 hover:bg-white text-red-600 hover:text-red-700 dark:bg-gray-800/80 dark:hover:bg-gray-800"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Product</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete "{product.title}"? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteProduct(product.id)}
-                                  className="bg-red-600 hover:bg-red-700"
+                          {!isViewingOtherUser && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="mt-2 w-full"
                                 >
+                                  <Trash2 className="w-4 h-4 mr-2" />
                                   Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{product.title}"? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteProduct(product.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </CardContent>
                       </Card>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                    {isViewingOtherUser ? 'No products listed' : 'No products yet. Create your first product!'}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </SidebarInset>
