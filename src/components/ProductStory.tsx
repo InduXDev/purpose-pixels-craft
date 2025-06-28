@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
+import ContentWithVideos from "./ContentWithVideos";
 
 interface ProductImage {
   id: string;
@@ -67,16 +68,7 @@ const ProductStory = ({ product, onClose }: ProductStoryProps) => {
     if (!user) {
       toast({
         title: "Please log in",
-        description: "You need to be logged in to add items to cart",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!product.originalId) {
-      toast({
-        title: "Error",
-        description: "Product ID not found",
+        description: "You need to be logged in to add items to your cart.",
         variant: "destructive",
       });
       return;
@@ -86,19 +78,17 @@ const ProductStory = ({ product, onClose }: ProductStoryProps) => {
     try {
       const { error } = await supabase
         .from('cart_items')
-        .upsert({
+        .insert({
           user_id: user.id,
-          product_id: product.originalId,
-          quantity: 1
-        }, {
-          onConflict: 'user_id,product_id'
+          product_id: product.originalId || product.id.toString(),
+          quantity: 1,
         });
 
       if (error) throw error;
 
       toast({
         title: "Added to cart!",
-        description: `${product.name} has been added to your cart`,
+        description: `${product.name} has been added to your cart.`,
       });
     } catch (error: any) {
       toast({
@@ -115,16 +105,7 @@ const ProductStory = ({ product, onClose }: ProductStoryProps) => {
     if (!user) {
       toast({
         title: "Please log in",
-        description: "You need to be logged in to save to wishlist",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!product.originalId) {
-      toast({
-        title: "Error",
-        description: "Product ID not found",
+        description: "You need to be logged in to save items to your wishlist.",
         variant: "destructive",
       });
       return;
@@ -134,18 +115,16 @@ const ProductStory = ({ product, onClose }: ProductStoryProps) => {
     try {
       const { error } = await supabase
         .from('wishlist_items')
-        .upsert({
+        .insert({
           user_id: user.id,
-          product_id: product.originalId
-        }, {
-          onConflict: 'user_id,product_id'
+          product_id: product.originalId || product.id.toString(),
         });
 
       if (error) throw error;
 
       toast({
         title: "Saved to wishlist!",
-        description: `${product.name} has been saved to your wishlist`,
+        description: `${product.name} has been saved to your wishlist.`,
       });
     } catch (error: any) {
       toast({
@@ -198,54 +177,52 @@ const ProductStory = ({ product, onClose }: ProductStoryProps) => {
           </div>
 
           {/* Content Section */}
-          <div className="p-8 flex flex-col justify-between">
-            <div>
-              <DialogHeader className="mb-6">
-                <DialogTitle className="text-3xl font-bold text-gray-900 mb-2">
-                  {product.name}
-                </DialogTitle>
-                <div className="text-3xl font-bold text-orange-600">{product.price}</div>
-              </DialogHeader>
+          <div className="p-6 overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {product.name}
+              </DialogTitle>
+              <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                {product.price}
+              </div>
+            </DialogHeader>
 
-              <div className="space-y-6">
-                {/* Story Section */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                    <Heart className="w-5 h-5 text-red-500 mr-2" />
-                    The Story Behind
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">{product.story}</p>
+            <div className="mt-6 space-y-6">
+              {/* Product Story */}
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Product Story</h4>
+                <div className="text-gray-600 dark:text-gray-300">
+                  <ContentWithVideos content={product.story} />
                 </div>
+              </div>
 
-                {/* Materials & Time */}
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="p-4 bg-amber-50 rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <Clock className="w-4 h-4 text-amber-600 mr-2" />
-                      <span className="font-semibold text-gray-900">Crafting Time</span>
-                    </div>
-                    <p className="text-sm text-gray-600">{product.timeToMake}</p>
-                  </div>
-                  
-                  <div className="p-4 bg-green-50 rounded-lg">
-                    <div className="flex items-center mb-2">
-                      <Leaf className="w-4 h-4 text-green-600 mr-2" />
-                      <span className="font-semibold text-gray-900">Materials</span>
-                    </div>
-                    <p className="text-sm text-gray-600">{product.materials}</p>
+              {/* Product Details */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Time to Make</h4>
+                  <div className="flex items-center text-gray-600 dark:text-gray-300">
+                    <Clock className="w-4 h-4 mr-2" />
+                    {product.timeToMake}
                   </div>
                 </div>
-
-                {/* Impact Tags */}
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">Social & Environmental Impact</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {product.impact.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="bg-green-100 text-green-800">
-                        {tag}
-                      </Badge>
-                    ))}
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Materials</h4>
+                  <div className="flex items-center text-gray-600 dark:text-gray-300">
+                    <Leaf className="w-4 h-4 mr-2" />
+                    {product.materials}
                   </div>
+                </div>
+              </div>
+
+              {/* Impact Tags */}
+              <div>
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Social & Environmental Impact</h4>
+                <div className="flex flex-wrap gap-2">
+                  {product.impact.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                      {tag}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             </div>
@@ -264,7 +241,7 @@ const ProductStory = ({ product, onClose }: ProductStoryProps) => {
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="w-full border-orange-600 text-orange-600 hover:bg-orange-50 py-3 rounded-full"
+                className="w-full border-orange-600 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 py-3 rounded-full"
                 onClick={handleAddToWishlist}
                 disabled={isAddingToWishlist}
               >

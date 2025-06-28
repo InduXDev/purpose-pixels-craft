@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, Share2, User, Calendar } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import ContentWithVideos from './ContentWithVideos';
 
 interface Post {
   id: string;
@@ -60,8 +60,8 @@ const PostCard = ({ post }: PostCardProps) => {
             )}
           </div>
           <div className="flex-1">
-            <p className="font-medium text-gray-900">{displayName}</p>
-            <div className="flex items-center text-sm text-gray-500">
+            <p className="font-medium text-gray-900 dark:text-gray-100">{displayName}</p>
+            <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
               <Calendar className="w-3 h-3 mr-1" />
               {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
             </div>
@@ -69,18 +69,21 @@ const PostCard = ({ post }: PostCardProps) => {
         </div>
 
         {/* Post Content */}
-        <h3 className="font-bold text-xl text-gray-900 mb-3 group-hover:text-orange-600 transition-colors">
+        <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-3 group-hover:text-orange-600 transition-colors">
           {post.title}
         </h3>
         
         {post.content && (
-          <p className="text-gray-600 mb-4 line-clamp-3">
-            {post.content}
-          </p>
+          <div className="mb-4">
+            <ContentWithVideos 
+              content={post.content} 
+              className="text-gray-600 dark:text-gray-300 line-clamp-3"
+            />
+          </div>
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"

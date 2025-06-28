@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Plus, MapPin, Clock, Star, Loader2, ArrowLeft } from 'lucide-react';
+import { Plus, MapPin, Clock, Star, Loader2, ArrowLeft, Play } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import ProductStory from '@/components/ProductStory';
+import { findVideoUrls } from '@/lib/videoEmbed';
 
 interface Product {
   id: string;
@@ -232,71 +232,90 @@ const Store = () => {
                 </div>
                 
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {products.map((product) => (
-                    <Card key={product.id} className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                      <div className="aspect-square overflow-hidden bg-gray-100">
-                        <img
-                          src={product.image_url || '/placeholder.svg'}
-                          alt={product.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-lg line-clamp-1 text-gray-900 dark:text-gray-100">{product.title}</CardTitle>
-                            <CardDescription className="text-sm text-gray-600 dark:text-gray-400">
-                              by {product.profiles?.full_name || product.profiles?.username || 'Anonymous'}
-                            </CardDescription>
-                          </div>
-                          <div className="flex items-center">
-                            <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400 ml-1">4.8</span>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="space-y-3">
-                          {product.description && (
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">{product.description}</p>
-                          )}
-                          
-                          <div className="flex flex-wrap gap-1">
-                            {product.category && (
-                              <Badge variant="secondary" className="text-xs">{product.category}</Badge>
-                            )}
-                            {product.condition && (
-                              <Badge variant="outline" className="text-xs">{product.condition}</Badge>
-                            )}
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <div className="text-xl font-bold text-orange-600">
-                              ₹{product.price.toLocaleString('en-IN')}
-                            </div>
-                            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {formatDistanceToNow(new Date(product.created_at), { addSuffix: true })}
-                            </div>
-                          </div>
-
-                          {product.location && (
-                            <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                              <MapPin className="w-4 h-4 mr-1" />
-                              {product.location}
+                  {products.map((product) => {
+                    const videoUrls = product.description ? findVideoUrls(product.description) : [];
+                    const hasVideos = videoUrls.length > 0;
+                    
+                    return (
+                      <Card key={product.id} className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                        <div className="aspect-square overflow-hidden bg-gray-100 relative">
+                          <img
+                            src={product.image_url || '/placeholder.svg'}
+                            alt={product.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          {hasVideos && (
+                            <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                              <Play className="w-3 h-3" />
+                              Video
                             </div>
                           )}
-
-                          <Button 
-                            className="w-full" 
-                            onClick={() => handleViewDetails(product)}
-                          >
-                            View Details
-                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        <CardHeader className="pb-2">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <CardTitle className="text-lg line-clamp-1 text-gray-900 dark:text-gray-100">{product.title}</CardTitle>
+                              <CardDescription className="text-sm text-gray-600 dark:text-gray-400">
+                                by {product.profiles?.full_name || product.profiles?.username || 'Anonymous'}
+                              </CardDescription>
+                            </div>
+                            <div className="flex items-center">
+                              <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                              <span className="text-sm text-gray-600 dark:text-gray-400 ml-1">4.8</span>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-3">
+                            {product.description && (
+                              <div className="mb-3">
+                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{product.description}</p>
+                                {hasVideos && (
+                                  <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                                    <Play className="w-3 h-3" />
+                                    Contains {videoUrls.length} video{videoUrls.length > 1 ? 's' : ''}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            <div className="flex flex-wrap gap-1">
+                              {product.category && (
+                                <Badge variant="secondary" className="text-xs">{product.category}</Badge>
+                              )}
+                              {product.condition && (
+                                <Badge variant="outline" className="text-xs">{product.condition}</Badge>
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <div className="text-xl font-bold text-orange-600">
+                                ₹{product.price.toLocaleString('en-IN')}
+                              </div>
+                              <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {formatDistanceToNow(new Date(product.created_at), { addSuffix: true })}
+                              </div>
+                            </div>
+
+                            {product.location && (
+                              <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                <MapPin className="w-4 h-4 mr-1" />
+                                {product.location}
+                              </div>
+                            )}
+
+                            <Button 
+                              className="w-full" 
+                              onClick={() => handleViewDetails(product)}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             )}

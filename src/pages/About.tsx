@@ -30,7 +30,7 @@ const About = () => {
       role: "Backend Development & Database Design",
       description: "Expert in database architecture, API development, and ensuring robust backend infrastructure for seamless data management.",
       skills: ["Supabase", "PostgreSQL", "API Design", "Database Security"],
-      avatar: "👨‍💻"
+      avatar: "👩‍💻"
     },
     {
       name: "P. Samhitha",
@@ -44,7 +44,7 @@ const About = () => {
       role: "Project Management & Testing",
       description: "Oversees project coordination, quality assurance, and ensures the delivery of a polished, bug-free application.",
       skills: ["Project Management", "Testing", "Quality Assurance", "Coordination"],
-      avatar: "👨‍💼"
+      avatar: "👩‍💼"
     }
   ];
 
@@ -239,20 +239,17 @@ const About = () => {
                 <div className="text-center space-y-4">
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Get in Touch</h2>
                   <p className="text-gray-600 dark:text-gray-300">
-                    Have questions or want to collaborate? We'd love to hear from you!
+                    Check out our project on GitHub and contribute to the community!
                   </p>
-                  <div className="flex justify-center space-x-4">
-                    <a href="mailto:team@aims.com" className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                      <Mail className="w-5 h-5" />
-                      <span>Email</span>
-                    </a>
-                    <a href="#" className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                  <div className="flex justify-center">
+                    <a 
+                      href="https://github.com/InduXDev/purpose-pixels-craft" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-200"
+                    >
                       <Github className="w-5 h-5" />
-                      <span>GitHub</span>
-                    </a>
-                    <a href="#" className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                      <Linkedin className="w-5 h-5" />
-                      <span>LinkedIn</span>
+                      <span>View on GitHub</span>
                     </a>
                   </div>
                 </div>
