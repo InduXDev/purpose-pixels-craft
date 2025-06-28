@@ -92,7 +92,10 @@ A modern web application for artisans to share their craft stories, showcase han
    ```env
    VITE_SUPABASE_URL=your_supabase_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   VITE_SITE_URL=https://your-production-domain.com
    ```
+
+   **Important**: Set `VITE_SITE_URL` to your production domain (e.g., `https://purpose-pixels-craft.vercel.app`) to ensure email confirmations work properly. This prevents users from being redirected to localhost after email verification.
 
 5. **Start development server**
    ```bash
