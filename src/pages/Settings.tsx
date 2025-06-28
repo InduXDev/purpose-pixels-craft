@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import useSettings from '@/hooks/useSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Globe, Palette, Save } from 'lucide-react';
-
-interface UserSettings {
-  language: string;
-  theme: string;
-}
 
 interface LanguageStrings {
   [key: string]: {
@@ -124,44 +119,19 @@ const translations: LanguageStrings = {
 };
 
 const Settings = () => {
-  const [settings, setSettings] = useState<UserSettings>({
-    language: 'en',
-    theme: 'light'
-  });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [userCreatedAt, setUserCreatedAt] = useState<string>('');
   const { user } = useAuth();
+  const { settings, setSettings, saveSettings, loading, saving } = useSettings();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const t = translations[settings.language] || translations.en;
 
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) return;
 
-    const fetchSettings = async () => {
+    const fetchUserInfo = async () => {
       try {
-        const { data, error } = await supabase
-          .from('user_settings')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          throw error;
-        }
-
-        if (data) {
-          setSettings({
-            language: data.language || 'en',
-            theme: data.theme || 'light'
-          });
-        }
-
         // Get user creation date from profiles table
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -177,76 +147,16 @@ const Settings = () => {
           setUserCreatedAt(profileData.created_at);
         }
       } catch (error: any) {
-        toast({
-          title: t.errorLoadingSettings,
-          description: error.message,
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+        console.error('Error fetching user info:', error);
       }
     };
 
-    fetchSettings();
-  }, [user, toast]);
+    fetchUserInfo();
+  }, [user]);
 
   const handleSaveSettings = async () => {
-    if (!user) return;
-
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: user.id,
-          language: settings.language,
-          theme: settings.theme,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        throw error;
-      }
-
-      // Apply theme to document
-      document.documentElement.setAttribute('data-theme', settings.theme);
-      
-      // Apply language to document
-      document.documentElement.setAttribute('lang', settings.language);
-
-      toast({
-        title: t.settingsSaved,
-        description: t.yourPreferencesUpdated,
-      });
-    } catch (error: any) {
-      toast({
-        title: t.errorSavingSettings,
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+    await saveSettings(settings);
   };
-
-  // Apply theme on component mount and when theme changes
-  useEffect(() => {
-    if (settings.theme) {
-      document.documentElement.setAttribute('data-theme', settings.theme);
-      if (settings.theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else if (settings.theme === 'light') {
-        document.documentElement.classList.remove('dark');
-      } else if (settings.theme === 'system') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (prefersDark) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }
-    }
-  }, [settings.theme]);
 
   if (!user) {
     return (
@@ -264,6 +174,26 @@ const Settings = () => {
               <Button onClick={() => navigate('/auth')}>
                 {t.signIn}
               </Button>
+            </div>
+          </div>
+        </SidebarInset>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex w-full">
+        <AppSidebar />
+        <SidebarInset>
+          <div className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <h1 className="text-xl font-semibold">{t.settings}</h1>
+          </div>
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Loading settings...</p>
             </div>
           </div>
         </SidebarInset>

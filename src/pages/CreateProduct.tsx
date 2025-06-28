@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
+import ImageUpload from '@/components/ImageUpload';
 import { Package, Upload, Loader2 } from 'lucide-react';
 
 const CreateProduct = () => {
@@ -103,8 +103,8 @@ const CreateProduct = () => {
           </div>
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Please Log In</h2>
-              <p className="text-gray-600 mb-6">You need to be logged in to create a product listing.</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">Please Log In</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">You need to be logged in to create a product listing.</p>
               <Button onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
@@ -177,15 +177,14 @@ const CreateProduct = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="image_url">Product Image URL</Label>
-                    <Input
-                      id="image_url"
-                      value={formData.image_url}
-                      onChange={(e) => handleInputChange('image_url', e.target.value)}
-                      placeholder="https://example.com/your-image.jpg"
-                    />
-                  </div>
+                  <ImageUpload
+                    value={formData.image_url}
+                    onChange={(url) => handleInputChange('image_url', url)}
+                    label="Product Image"
+                    placeholder="Upload product image or enter URL"
+                    showPreview={true}
+                    maxSize={5}
+                  />
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">

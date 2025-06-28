@@ -1,13 +1,11 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { X, Plus, Loader2 } from 'lucide-react';
+import ImageUpload from '@/components/ImageUpload';
+import { X, Loader2 } from 'lucide-react';
 
 interface ProductImage {
   id: string;
@@ -117,6 +115,13 @@ const ProductImageManager = ({ productId, onImagesChange }: ProductImageManagerP
     }
   };
 
+  const handleImageUpload = (url: string) => {
+    setNewImageUrl(url);
+    if (url.trim()) {
+      addImage();
+    }
+  };
+
   if (fetchingImages) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -126,43 +131,42 @@ const ProductImageManager = ({ productId, onImagesChange }: ProductImageManagerP
   }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="new-image">Add Image URL</Label>
-        <div className="flex gap-2">
-          <Input
-            id="new-image"
-            value={newImageUrl}
-            onChange={(e) => setNewImageUrl(e.target.value)}
-            placeholder="Enter image URL..."
-          />
-          <Button onClick={addImage} disabled={loading || !newImageUrl.trim()}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <h4 className="font-medium text-gray-900 dark:text-gray-100">Add Product Images</h4>
+        <ImageUpload
+          value={newImageUrl}
+          onChange={handleImageUpload}
+          label="Upload Image"
+          placeholder="Upload product image or enter URL"
+          showPreview={false}
+          maxSize={5}
+        />
       </div>
 
       {images.length > 0 && (
         <div className="space-y-4">
-          <h4 className="font-medium">Product Images ({images.length})</h4>
+          <h4 className="font-medium text-gray-900 dark:text-gray-100">Product Images ({images.length})</h4>
           
           {images.length === 1 ? (
-            <Card>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardContent className="p-4">
-                <div className="relative">
+                <div className="relative group">
                   <img
                     src={images[0].image_url}
                     alt="Product"
                     className="w-full h-48 object-cover rounded"
                   />
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => removeImage(images[0].id)}
-                    className="absolute top-2 right-2"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded flex items-center justify-center">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => removeImage(images[0].id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -172,22 +176,24 @@ const ProductImageManager = ({ productId, onImagesChange }: ProductImageManagerP
                 <CarouselContent>
                   {images.map((image) => (
                     <CarouselItem key={image.id}>
-                      <Card>
+                      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                         <CardContent className="p-4">
-                          <div className="relative">
+                          <div className="relative group">
                             <img
                               src={image.image_url}
                               alt="Product"
                               className="w-full h-48 object-cover rounded"
                             />
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => removeImage(image.id)}
-                              className="absolute top-2 right-2"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded flex items-center justify-center">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => removeImage(image.id)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>

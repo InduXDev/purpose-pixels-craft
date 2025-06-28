@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Image as ImageIcon, Type, FileText } from 'lucide-react';
+import ImageUpload from '@/components/ImageUpload';
+import { Upload, Type, FileText } from 'lucide-react';
 
 const CreatePost = () => {
   const [title, setTitle] = useState('');
@@ -127,35 +128,14 @@ const CreatePost = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-200">
-                  <ImageIcon className="w-4 h-4" />
-                  <span>Image URL (optional)</span>
-                </label>
-                <Input
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="transition-all duration-300 focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400"
-                />
-                {imageUrl && (
-                  <div className="mt-3 animate-fade-in">
-                    <img
-                      src={imageUrl}
-                      alt="Preview"
-                      className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600"
-                      onError={() => {
-                        toast({
-                          title: "Invalid image URL",
-                          description: "Please check the image URL and try again.",
-                          variant: "destructive",
-                        });
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+              <ImageUpload
+                value={imageUrl}
+                onChange={setImageUrl}
+                label="Post Image (optional)"
+                placeholder="Upload an image for your post or enter URL"
+                showPreview={true}
+                maxSize={5}
+              />
 
               <div className="flex space-x-4 pt-4">
                 <Button
