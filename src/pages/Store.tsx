@@ -95,7 +95,8 @@ const Store = () => {
       story: product.description || 'A beautiful handcrafted item made with love and attention to detail.',
       impact: ['Handmade', 'Sustainable', 'Local Artisan', 'Eco-friendly'],
       timeToMake: '2-3 days',
-      materials: product.condition || 'High-quality materials'
+      materials: product.condition || 'High-quality materials',
+      originalId: product.id // Pass the original UUID
     };
     setSelectedProduct(storyProduct);
   };

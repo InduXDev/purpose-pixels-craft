@@ -3,6 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X, Clock, Leaf, Heart, ShoppingCart } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface ProductStoryProps {
   product: {
@@ -14,11 +18,112 @@ interface ProductStoryProps {
     impact: string[];
     timeToMake: string;
     materials: string;
+    originalId?: string; // Add this to track the original product ID from database
   };
   onClose: () => void;
 }
 
 const ProductStory = ({ product, onClose }: ProductStoryProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
+
+  const handleAddToCart = async () => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to be logged in to add items to cart",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!product.originalId) {
+      toast({
+        title: "Error",
+        description: "Product ID not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAddingToCart(true);
+    try {
+      const { error } = await supabase
+        .from('cart_items')
+        .upsert({
+          user_id: user.id,
+          product_id: product.originalId,
+          quantity: 1
+        }, {
+          onConflict: 'user_id,product_id'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Added to cart!",
+        description: `${product.name} has been added to your cart`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error adding to cart",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  const handleAddToWishlist = async () => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to be logged in to save to wishlist",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!product.originalId) {
+      toast({
+        title: "Error",
+        description: "Product ID not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAddingToWishlist(true);
+    try {
+      const { error } = await supabase
+        .from('wishlist_items')
+        .upsert({
+          user_id: user.id,
+          product_id: product.originalId
+        }, {
+          onConflict: 'user_id,product_id'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Saved to wishlist!",
+        description: `${product.name} has been saved to your wishlist`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error saving to wishlist",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingToWishlist(false);
+    }
+  };
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-0">
@@ -95,13 +200,24 @@ const ProductStory = ({ product, onClose }: ProductStoryProps) => {
 
             {/* Action Buttons */}
             <div className="mt-8 space-y-3">
-              <Button size="lg" className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-full transition-all duration-300 hover:scale-105">
+              <Button 
+                size="lg" 
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-full transition-all duration-300 hover:scale-105"
+                onClick={handleAddToCart}
+                disabled={isAddingToCart}
+              >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                Add to Cart
+                {isAddingToCart ? "Adding..." : "Add to Cart"}
               </Button>
-              <Button variant="outline" size="lg" className="w-full border-orange-600 text-orange-600 hover:bg-orange-50 py-3 rounded-full">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="w-full border-orange-600 text-orange-600 hover:bg-orange-50 py-3 rounded-full"
+                onClick={handleAddToWishlist}
+                disabled={isAddingToWishlist}
+              >
                 <Heart className="w-5 h-5 mr-2" />
-                Save to Wishlist
+                {isAddingToWishlist ? "Saving..." : "Save to Wishlist"}
               </Button>
             </div>
           </div>
