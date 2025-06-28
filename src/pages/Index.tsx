@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,8 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { PostsFeed } from '@/components/PostsFeed';
-import { ImpactMetrics } from '@/components/ImpactMetrics';
+import PostsFeed from '@/components/PostsFeed';
+import ImpactMetrics from '@/components/ImpactMetrics';
 import { Heart, MessageCircle, Share2, TrendingUp, Users, Package, Sparkles } from 'lucide-react';
 
 const Index = () => {
