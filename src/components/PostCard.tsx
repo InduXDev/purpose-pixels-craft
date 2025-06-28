@@ -34,7 +34,7 @@ const PostCard = ({ post }: PostCardProps) => {
   const displayName = post.profiles?.full_name || post.profiles?.username || 'Anonymous User';
 
   return (
-    <Card className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 shadow-lg bg-white/80 backdrop-blur-sm animate-fade-in">
+    <Card className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 border-0 shadow-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm animate-fade-in">
       {post.image_url && (
         <div className="aspect-video overflow-hidden">
           <img
@@ -48,7 +48,7 @@ const PostCard = ({ post }: PostCardProps) => {
       <CardContent className="p-6">
         {/* Author Info */}
         <div className="flex items-center space-x-3 mb-4">
-          <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
             {post.profiles?.avatar_url ? (
               <img
                 src={post.profiles.avatar_url}
@@ -56,7 +56,7 @@ const PostCard = ({ post }: PostCardProps) => {
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
-              <User className="w-5 h-5 text-orange-600" />
+              <User className="w-5 h-5 text-orange-600 dark:text-orange-400" />
             )}
           </div>
           <div className="flex-1">
@@ -69,7 +69,7 @@ const PostCard = ({ post }: PostCardProps) => {
         </div>
 
         {/* Post Content */}
-        <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-3 group-hover:text-orange-600 transition-colors">
+        <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100 mb-3 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
           {post.title}
         </h3>
         
@@ -90,20 +90,20 @@ const PostCard = ({ post }: PostCardProps) => {
               size="sm"
               onClick={handleLike}
               className={`transition-all duration-300 hover:scale-110 ${
-                liked ? 'text-red-500 hover:text-red-600' : 'text-gray-500 hover:text-red-500'
+                liked ? 'text-red-500 hover:text-red-600 dark:hover:text-red-400' : 'text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400'
               }`}
             >
               <Heart className={`w-4 h-4 mr-1 ${liked ? 'fill-current' : ''}`} />
               {likes}
             </Button>
             
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-500 transition-all duration-300 hover:scale-110">
+            <Button variant="ghost" size="sm" className="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-all duration-300 hover:scale-110">
               <MessageCircle className="w-4 h-4 mr-1" />
               {Math.floor(Math.random() * 10) + 1}
             </Button>
           </div>
           
-          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-green-500 transition-all duration-300 hover:scale-110">
+          <Button variant="ghost" size="sm" className="text-gray-500 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-all duration-300 hover:scale-110">
             <Share2 className="w-4 h-4" />
           </Button>
         </div>
