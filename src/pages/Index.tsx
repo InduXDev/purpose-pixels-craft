@@ -97,6 +97,14 @@ const Index = () => {
                     >
                       Explore Store
                     </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => navigate('/about')}
+                      size="lg"
+                      className="px-8 py-3 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-orange-600 dark:hover:text-orange-400"
+                    >
+                      About Team AIMS
+                    </Button>
                   </div>
                 </div>
               </div>
