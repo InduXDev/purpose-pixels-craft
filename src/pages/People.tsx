@@ -1,6 +1,5 @@
-
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -39,9 +38,72 @@ const People = () => {
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [userProducts, setUserProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Check if we should auto-open a specific user's profile
+  useEffect(() => {
+    const userId = searchParams.get('user');
+    if (userId && user) {
+      // Auto-fetch and show the specific user's profile
+      fetchSpecificUserProfile(userId);
+    }
+  }, [searchParams, user]);
+
+  const fetchSpecificUserProfile = async (userId: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setSelectedProfile(data);
+        // Also fetch their products
+        fetchUserProducts(data);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error loading profile",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserProducts = async (profile: Profile) => {
+    setLoadingProducts(true);
+    
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, title, price, image_url, created_at')
+        .eq('user_id', profile.id)
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (error) {
+        throw error;
+      }
+
+      setUserProducts(data || []);
+    } catch (error: any) {
+      console.error('Error loading user products:', error);
+      setUserProducts([]);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) {
@@ -81,31 +143,11 @@ const People = () => {
 
   const handleViewProfile = async (profile: Profile) => {
     setSelectedProfile(profile);
-    setLoadingProducts(true);
-    
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('id, title, price, image_url, created_at')
-        .eq('user_id', profile.id)
-        .order('created_at', { ascending: false })
-        .limit(6);
-
-      if (error) {
-        throw error;
-      }
-
-      setUserProducts(data || []);
-    } catch (error: any) {
-      console.error('Error loading user products:', error);
-      setUserProducts([]);
-    } finally {
-      setLoadingProducts(false);
-    }
+    fetchUserProducts(profile);
   };
 
   const handleProductClick = (product: Product, userId: string) => {
-    // Navigate to store with user filter
+    // Navigate to store with user filter and specific product
     navigate(`/store?user=${userId}&product=${product.id}`);
   };
 

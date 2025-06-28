@@ -378,7 +378,11 @@ const Profile = () => {
                 {products.length > 0 ? (
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {products.map((product) => (
-                      <Card key={product.id} className="overflow-hidden">
+                      <Card 
+                        key={product.id} 
+                        className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => navigate(`/store?user=${targetUserId}&product=${product.id}`)}
+                      >
                         <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700">
                           <img
                             src={product.image_url || '/placeholder.svg'}
@@ -398,6 +402,7 @@ const Profile = () => {
                                   variant="destructive"
                                   size="sm"
                                   className="mt-2 w-full"
+                                  onClick={(e) => e.stopPropagation()}
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" />
                                   Delete
