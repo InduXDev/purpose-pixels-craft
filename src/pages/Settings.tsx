@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Globe, Palette, Save } from 'lucide-react';
+import { Globe, Palette, Save, Lock, Eye, EyeOff } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface LanguageStrings {
   [key: string]: {
@@ -299,6 +300,11 @@ const Settings = () => {
   const { settings, setSettings, saveSettings, loading, saving } = useSettings();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const t = translations[settings.language] || translations.en;
 
@@ -331,6 +337,52 @@ const Settings = () => {
 
   const handleSaveSettings = async () => {
     await saveSettings(settings);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        title: "Passwords don't match",
+        description: "Please make sure both passwords are the same.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Password updated!",
+          description: "Your password has been changed successfully.",
+        });
+        setNewPassword('');
+        setConfirmNewPassword('');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   if (!user) {
@@ -477,6 +529,66 @@ const Settings = () => {
                     </p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mt-8">
+              <CardHeader>
+                <CardTitle>Set a New Password</CardTitle>
+                <CardDescription>
+                  Change your account password. Make sure to use a strong password.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  <div className="relative">
+                    <Label htmlFor="new-password">New Password</Label>
+                    <Lock className="absolute left-3 top-10 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                    <Input
+                      id="new-password"
+                      type={showNewPassword ? 'text' : 'password'}
+                      placeholder="Enter new password"
+                      value={newPassword}
+                      onChange={e => setNewPassword(e.target.value)}
+                      className="pl-10 mt-1"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+                    <Lock className="absolute left-3 top-10 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                    <Input
+                      id="confirm-new-password"
+                      type={showConfirmNewPassword ? 'text' : 'password'}
+                      placeholder="Confirm new password"
+                      value={confirmNewPassword}
+                      onChange={e => setConfirmNewPassword(e.target.value)}
+                      className="pl-10 mt-1"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                      className="absolute right-3 top-10 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                      {showConfirmNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={changingPassword}
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300 hover:scale-105"
+                  >
+                    {changingPassword ? 'Updating...' : 'Update Password'}
+                  </Button>
+                </form>
               </CardContent>
             </Card>
 
