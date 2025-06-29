@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string, userData?: any) => {
     // Use production URL for email confirmations, fallback to current origin for development
-    const redirectUrl = `${config.site.url}/`;
+    const redirectUrl = `${config.site.url}/email-confirmation`;
     
     const { error } = await supabase.auth.signUp({
       email,

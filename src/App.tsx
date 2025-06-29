@@ -9,6 +9,9 @@ import { SettingsProvider } from "@/contexts/SettingsContext";
 import useInitialSettings from "@/hooks/useInitialSettings";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import EmailConfirmation from "./pages/EmailConfirmation";
 import CreatePost from "./pages/CreatePost";
 import MyPosts from "./pages/MyPosts";
 import Profile from "./pages/Profile";
@@ -40,6 +43,9 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/email-confirmation" element={<EmailConfirmation />} />
                   <Route path="/create-post" element={<CreatePost />} />
                   <Route path="/my-posts" element={<MyPosts />} />
                   <Route path="/profile" element={<Profile />} />
