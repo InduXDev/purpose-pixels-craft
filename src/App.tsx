@@ -25,6 +25,7 @@ import Checkout from "./pages/Checkout";
 import Wishlist from "./pages/Wishlist";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
+import AuthError from "./pages/AuthError";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/email-confirmation" element={<EmailConfirmation />} />
+                  <Route path="/auth-error" element={<AuthError />} />
                   <Route path="/create-post" element={<CreatePost />} />
                   <Route path="/my-posts" element={<MyPosts />} />
                   <Route path="/profile" element={<Profile />} />

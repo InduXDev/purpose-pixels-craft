@@ -133,15 +133,15 @@ const ResetPassword = () => {
               Password Reset Successfully!
             </CardTitle>
             <CardDescription className="text-gray-600 dark:text-gray-400">
-              Your password has been updated. You can now sign in with your new password.
+              Your password has been updated. You can now continue to the app.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/')}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white transition-all duration-300 hover:scale-105"
             >
-              Sign In
+              Continue to App
             </Button>
           </CardContent>
         </Card>
@@ -157,10 +157,10 @@ const ResetPassword = () => {
       <Card className="w-full max-w-md animate-scale-in shadow-2xl border-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Reset Password
+            Set a New Password
           </CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
-            Enter your new password below
+            Please set a new password to complete your password reset.
           </CardDescription>
         </CardHeader>
         <CardContent>
